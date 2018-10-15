@@ -1,7 +1,14 @@
-import React from 'react';
+import React, { PropTypes, Component } from 'react';
 import ReactDOM from 'react-dom';
 import SpeechRecognition from 'react-speech-recognition'
 import './index.css';
+
+const propTypes = {
+  // Props injected by SpeechRecognition
+  transcript: PropTypes.string,
+  resetTranscript: PropTypes.func,
+  browserSupportsSpeechRecognition: PropTypes.bool
+}
 
 class SpeechInput extends React.Component {
   constructor(props) {
@@ -10,19 +17,25 @@ class SpeechInput extends React.Component {
     this.state = {
       status: props.status,
       bookings: props.bookings,
+      selectedBooking: props.selectedBooking
     };
   }
 
   render() {
+    const { transcript, resetTranscript, browserSupportsSpeechRecognition } = this.props;
+
     const bookings = this.state.bookings;
     const bookingsList = bookings.map((booking) =>
-      <option value={booking.number}>{booking.number}</option>
+      <option key={booking.number} value={booking.number}>{booking.number}</option>
     );
+    const selectedBooking = this.state.selectBooking;
+    const selectedBookingNumber = !selectedBooking ? undefined : selectedBooking.number;
 
     return (
       <div>
-        <select onChange={this.selectBooking}>
-          <option value="">Select Booking</option>
+        <select value={!this.state.selectedBooking ? undefined : this.state.selectedBooking.number} onChange={this.selectBooking}>
+          <option value="undefined">Select Booking</option>
+          <option value="90056">90056 (invalid test)</option>
           {bookingsList}
         </select>
       </div>
@@ -35,34 +48,48 @@ function BookingDisplay(props) {
   const bookingNumber = bookingData.number;
   const passengers = bookingData.passengers;
   const passengerList = passengers.map((passenger) =>
-    <li>{passenger}</li>
+    <li key={passenger}>{passenger}</li>
   );
   const roomNumber = bookingData.roomNumber;
 
   return (
-    <div>
-      <div className="booking-number">{bookingNumber}</div>
-      <ol className="booking-passengers">{passengerList}</ol>
-      <div className="booking-roomNumber">{roomNumber}</div>
+    <div className="booking-display">
+      <div className="booking-number">Booking Number: {bookingNumber}</div>
+
+      <div className="booking-passengers">
+        <p>Passengers</p>
+        <ol>{passengerList}</ol>
+      </div>
+
+      <div className="booking-roomNumber">Room Number: {roomNumber}</div>
     </div>
   );
 }
 
 function KioskHelp(props) {
-  return (
-    <div>
-      <div>Please speak a booking number in order to retrieve your booking details.</div>
-    </div>
-  )
+  if (!!props.invalidBookingNumber) {
+    return (
+      <div>
+        <div>Booking number {props.invalidBookingNumber} is invalid. Please speak again or go to the service desk.</div>
+      </div>
+    );
+  } else {
+    return (
+      <div>
+        <div>Please speak a booking number in order to retrieve your booking details.</div>
+      </div>
+    )
+  }
 }
 
 function BookingOutput(props) {
   const bookingData = props.selectedBooking;
+  const invalidBookingNumber = props.invalidBookingNumber;
 
-  if (bookingData !== null) {
+  if (bookingData !== undefined) {
     return <BookingDisplay bookingData={bookingData} />
   } else {
-    return <KioskHelp />
+    return <KioskHelp invalidBookingNumber={invalidBookingNumber} />
   }
 }
 
@@ -70,8 +97,8 @@ class Kiosk extends React.Component {
   constructor(props) {
     super(props);
     this.state = {
-      selectedBooking: null,
-      bookings: [
+      selectedBooking: undefined,
+      bookings: [ // Move data to SQLite or other database and retrieve via AJAX call in the future
         {
           number: 12345,
           passengers: [
@@ -99,6 +126,8 @@ class Kiosk extends React.Component {
         }
       ],
       status: 'No Booking Selected.',
+      requestTimeout: undefined,
+      invalidBookingNumber: null,
     };
 
     this.selectBooking = this.selectBooking.bind(this);
@@ -110,24 +139,26 @@ class Kiosk extends React.Component {
       return (booking.number == bookingNumber);
     });
 
-    if (!!bookingData) {
-      this.setState({selectedBooking: bookingData});
-
-      setTimeout(() => {
-        this.setState({selectedBooking: null})
-      }, 20000);
+    this.setState({selectedBooking: bookingData});
+    if (!bookingData) {
+      this.setState({invalidBookingNumber: bookingNumber});
     }
+
+    clearTimeout(this.state.requestTimeout);
+    this.state.requestTimeout = setTimeout(() => {
+      this.setState({selectedBooking: undefined, invalidBookingNumber: null});
+    }, 20000);
   }
 
   render() {
     return (
       <div className="kiosk">
         <div className="speech-input">
-          <SpeechInput status={this.state.status} bookings={this.state.bookings} selectBooking={this.selectBooking} />
+          <SpeechInput selectedBooking={this.state.selectedBooking} bookings={this.state.bookings} selectBooking={this.selectBooking} />
         </div>
 
         <div className="booking-info">
-          <BookingOutput selectedBooking={this.state.selectedBooking} />
+          <BookingOutput selectedBooking={this.state.selectedBooking} invalidBookingNumber={this.state.invalidBookingNumber} />
         </div>
       </div>
     );
