@@ -6,22 +6,32 @@ import './index.css';
 class SpeechInput extends React.Component {
   constructor(props) {
     super(props);
+    this.selectBooking = props.selectBooking;
     this.state = {
-      status: props.status
+      status: props.status,
+      bookings: props.bookings,
     };
   }
 
   render() {
+    const bookings = this.state.bookings;
+    const bookingsList = bookings.map((booking) =>
+      <option value={booking.number}>{booking.number}</option>
+    );
+
     return (
       <div>
-        <div className="status">{this.state.status}</div>
+        <select onChange={this.selectBooking}>
+          <option value="">Select Booking</option>
+          {bookingsList}
+        </select>
       </div>
     );
   }
 }
 
 function BookingDisplay(props) {
-  const bookingData = props.selectedBooking;
+  const bookingData = props.bookingData;
   const bookingNumber = bookingData.number;
   const passengers = bookingData.passengers;
   const passengerList = passengers.map((passenger) =>
@@ -41,14 +51,16 @@ function BookingDisplay(props) {
 function KioskHelp(props) {
   return (
     <div>
-      <div></div>
+      <div>Please speak a booking number in order to retrieve your booking details.</div>
     </div>
   )
 }
 
 function BookingOutput(props) {
-  if (props.selectedBooking !== null) {
-    return <BookingDisplay bookingData={props.selectedBooking} />
+  const bookingData = props.selectedBooking;
+
+  if (bookingData !== null) {
+    return <BookingDisplay bookingData={bookingData} />
   } else {
     return <KioskHelp />
   }
@@ -88,14 +100,32 @@ class Kiosk extends React.Component {
       ],
       status: 'No Booking Selected.',
     };
+
+    this.selectBooking = this.selectBooking.bind(this);
+  }
+
+  selectBooking(event) {
+    const bookingNumber = event.target.value;
+    const bookingData = this.state.bookings.find(function(booking) {
+      return (booking.number == bookingNumber);
+    });
+
+    if (!!bookingData) {
+      this.setState({selectedBooking: bookingData});
+
+      setTimeout(() => {
+        this.setState({selectedBooking: null})
+      }, 20000);
+    }
   }
 
   render() {
     return (
       <div className="kiosk">
         <div className="speech-input">
-          <SpeechInput status={this.state.status} />
+          <SpeechInput status={this.state.status} bookings={this.state.bookings} selectBooking={this.selectBooking} />
         </div>
+
         <div className="booking-info">
           <BookingOutput selectedBooking={this.state.selectedBooking} />
         </div>
