@@ -11,6 +11,10 @@ const propTypes = {
   browserSupportsSpeechRecognition: PropTypes.bool
 }
 
+const speechOptions = {
+  autoStart: false
+}
+
 class SpeechInput extends React.Component {
   constructor(props) {
     super(props);
@@ -21,6 +25,14 @@ class SpeechInput extends React.Component {
       selectedBooking: props.selectedBooking
     };
   }
+
+  // handleSpeech() { -- Add in speech handling next
+  //   if (!!this.props.listening) {
+  //     this.props.startListening();
+  //   } else {
+  //     this.props.stopListening();
+  //   }
+  // }
 
   render() {
     const { transcript, resetTranscript, browserSupportsSpeechRecognition } = this.props;
@@ -43,6 +55,8 @@ class SpeechInput extends React.Component {
     );
   }
 }
+
+export default SpeechRecognition(speechOptions)(SpeechInput)
 
 function BookingDisplay(props) {
   const bookingData = props.bookingData;
@@ -137,7 +151,7 @@ class Kiosk extends React.Component {
   selectBooking(event) {
     const bookingNumber = event.target.value;
     const bookingData = this.state.bookings.find(function(booking) {
-      return (booking.number == bookingNumber);
+      return (booking.number === parseInt(bookingNumber));
     });
 
     this.setState({selectedBooking: bookingData});
