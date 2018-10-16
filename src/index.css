@@ -1,6 +1,8 @@
 body {
   font: 14px "Century Gothic", Futura, sans-serif;
   margin: 20px;
+  background-color: #70cbf4;
+  color: #092a5e;
 }
 
 ol, ul {
@@ -8,7 +10,14 @@ ol, ul {
 }
 
 .booking-display {
-  border: solid 2px #333;
+  border: solid 2px #092a5e;
   border-radius: 4px;
+  background-color: #dbf2fc;
+  padding: 4px;
   width: 20em;
+}
+
+.booking-info {
+  margin-top: 2em;
+  margin-left: 1em;
 }
